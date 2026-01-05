@@ -35,7 +35,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddApplication();
 
 // Configure database
-var databaseProvider = builder.Configuration.GetValue<string>("Database:Provider") ?? "SqlServer";
+var databaseProvider = builder.Configuration.GetValue<string>("Database:Provider") ?? "SQLite";
 
 if (databaseProvider == DatabaseProvider.MongoDB)
 {
@@ -45,6 +45,13 @@ if (databaseProvider == DatabaseProvider.MongoDB)
         ?? "quickingestfile";
 
     builder.Services.AddMongoDatabase(mongoConnectionString, mongoDatabaseName);
+}
+else if (databaseProvider == DatabaseProvider.SQLite)
+{
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+        ?? "Data Source=quickingestfile.db";
+
+    builder.Services.AddSqliteDatabase(connectionString);
 }
 else
 {
@@ -80,7 +87,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("AllowFrontend");
 
-// Ensure database is created (for SQL)
+// Ensure database is created (for SQL/SQLite)
 if (databaseProvider != DatabaseProvider.MongoDB)
 {
     using var scope = app.Services.CreateScope();

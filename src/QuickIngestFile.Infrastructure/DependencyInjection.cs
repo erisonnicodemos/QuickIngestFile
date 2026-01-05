@@ -52,6 +52,18 @@ public static class DependencyInjection
         return services;
     }
 
+    public static IServiceCollection AddSqliteDatabase(
+        this IServiceCollection services,
+        string connectionString)
+    {
+        services.AddDbContext<AppDbContext>(options =>
+        {
+            options.UseSqlite(connectionString);
+        });
+
+        return services;
+    }
+
     public static IServiceCollection AddMongoDatabase(
         this IServiceCollection services,
         string connectionString,

@@ -8,9 +8,9 @@ public sealed class DatabaseOptions
     public const string SectionName = "Database";
 
     /// <summary>
-    /// Database provider to use: SqlServer, PostgreSQL, or MongoDB
+    /// Database provider to use: SqlServer, SQLite, PostgreSQL, or MongoDB
     /// </summary>
-    public string Provider { get; set; } = "SqlServer";
+    public string Provider { get; set; } = "SQLite";
 
     /// <summary>
     /// Connection string for SQL databases.
@@ -38,6 +38,7 @@ public sealed class MongoDbSettings
 public static class DatabaseProvider
 {
     public const string SqlServer = "SqlServer";
+    public const string SQLite = "SQLite";
     public const string PostgreSQL = "PostgreSQL";
     public const string MongoDB = "MongoDB";
 }
