@@ -20,6 +20,12 @@ public static class DependencyInjection
         services.AddScoped<ImportService>();
         services.AddScoped<ImportJobService>();
         services.AddScoped<DataQueryService>();
+        
+        // Register background import queue (singleton for shared state)
+        services.AddSingleton<BackgroundImportQueue>();
+        
+        // Register background worker for parallel import processing
+        services.AddHostedService<ImportBackgroundWorker>();
 
         return services;
     }

@@ -36,14 +36,17 @@ export interface ColumnDefinition {
 export interface ImportJob {
   id: string
   fileName: string
+  fileType: string
+  fileSize: number
   status: string
   totalRecords: number
   processedRecords: number
-  progress: number
+  failedRecords: number
   errorMessage?: string
   startedAt?: string
   completedAt?: string
   createdAt: string
+  durationMs?: number
 }
 
 export interface ImportProgress {
@@ -52,6 +55,10 @@ export interface ImportProgress {
   processedRecords: number
   progress: number
   status: string
+  errorMessage?: string
+  startedAt?: string
+  completedAt?: string
+  durationMs?: number
 }
 
 export interface ImportResult {
@@ -91,7 +98,7 @@ export const importApi = {
     return response.data
   },
 
-  // Start import
+  // Start import (synchronous - waits for completion)
   import: async (file: File, options?: { delimiter?: string; hasHeader?: boolean }): Promise<ImportProgress> => {
     const formData = new FormData()
     formData.append('file', file)
@@ -99,6 +106,22 @@ export const importApi = {
     if (options?.hasHeader !== undefined) formData.append('hasHeader', String(options.hasHeader))
 
     const response = await api.post<ImportProgress>('/import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return response.data
+  },
+
+  // Start import (asynchronous - returns immediately, processes in background)
+  // Allows parallel imports of multiple files
+  importAsync: async (file: File, options?: { delimiter?: string; hasHeader?: boolean }): Promise<ImportJob> => {
+    const formData = new FormData()
+    formData.append('file', file)
+    
+    const params = new URLSearchParams()
+    if (options?.delimiter) params.append('delimiter', options.delimiter)
+    if (options?.hasHeader !== undefined) params.append('hasHeader', String(options.hasHeader))
+
+    const response = await api.post<ImportJob>(`/import/async?${params.toString()}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
     return response.data

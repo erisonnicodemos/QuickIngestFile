@@ -6,8 +6,13 @@ interface PreviewTableProps {
 }
 
 export function PreviewTable({ preview, maxRows = 10 }: PreviewTableProps) {
+  // Safety check for undefined preview or columns
+  if (!preview || !preview.detectedColumns) {
+    return null
+  }
+
   const columns = preview.detectedColumns.filter((c) => !c.isIgnored)
-  const rows = preview.previewRows.slice(0, maxRows)
+  const rows = (preview.previewRows || []).slice(0, maxRows)
 
   const getTypeColor = (type: string) => {
     switch (type) {

@@ -1,22 +1,62 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { FileUpload, PreviewTable, ImportProgressBar, DataTable, RecentJobs } from './components'
-import { importApi, type FilePreview, type ImportProgress } from './api'
+import { importApi, jobsApi, type FilePreview, type ImportProgress, type ImportJob } from './api'
 
-type AppState = 'upload' | 'preview' | 'importing' | 'viewing'
+type AppState = 'upload' | 'preview' | 'viewing'
+
+interface ActiveImport {
+  id: string
+  fileName: string
+  progress: ImportProgress
+  startTime: number
+  elapsedTime: number
+}
 
 export default function App() {
   const [state, setState] = useState<AppState>('upload')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<FilePreview | null>(null)
-  const [importProgress, setImportProgress] = useState<ImportProgress | null>(null)
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
+  
+  // Multiple active imports
+  const [activeImports, setActiveImports] = useState<ActiveImport[]>([])
+  const pollingRefs = useRef<Map<string, NodeJS.Timeout>>(new Map())
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
 
   // Import options
   const [delimiter, setDelimiter] = useState<string>(',')
   const [hasHeader, setHasHeader] = useState<boolean>(true)
+
+  // Timer effect for elapsed time of all active imports
+  useEffect(() => {
+    if (activeImports.length > 0) {
+      timerRef.current = setInterval(() => {
+        setActiveImports(prev => prev.map(imp => ({
+          ...imp,
+          elapsedTime: Date.now() - imp.startTime
+        })))
+      }, 100)
+    } else {
+      if (timerRef.current) {
+        clearInterval(timerRef.current)
+        timerRef.current = null
+      }
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current)
+    }
+  }, [activeImports.length])
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      pollingRefs.current.forEach(timeout => clearTimeout(timeout))
+      if (timerRef.current) clearInterval(timerRef.current)
+    }
+  }, [])
 
   const handleFileSelect = useCallback(async (file: File) => {
     setSelectedFile(file)
@@ -37,37 +77,93 @@ export default function App() {
   const handleImport = useCallback(async () => {
     if (!selectedFile) return
 
+    const fileToImport = selectedFile
+    const currentDelimiter = delimiter
+    const currentHasHeader = hasHeader
+
     setIsLoading(true)
     setError(null)
 
     try {
-      const progress = await importApi.import(selectedFile, { delimiter, hasHeader })
-      setImportProgress(progress)
-      setState('importing')
-
-      // Poll for progress updates
-      const pollProgress = async () => {
-        if (progress.status === 'Completed' || progress.status === 'Failed') {
-          setRefreshTrigger((t) => t + 1)
-          if (progress.status === 'Completed') {
-            setSelectedJobId(progress.importJobId)
-            setState('viewing')
-          }
-          return
+      // Use async API - returns immediately with job ID
+      const job: ImportJob = await importApi.importAsync(fileToImport, { 
+        delimiter: currentDelimiter, 
+        hasHeader: currentHasHeader 
+      })
+      
+      // Add to active imports
+      const newImport: ActiveImport = {
+        id: job.id,
+        fileName: fileToImport.name,
+        startTime: Date.now(),
+        elapsedTime: 0,
+        progress: {
+          importJobId: job.id,
+          totalRecords: job.totalRecords,
+          processedRecords: job.processedRecords,
+          progress: 0,
+          status: job.status || 'Pending'
         }
-        // In a real implementation, you'd poll the API here
-        // For now, we assume it completes
-        setTimeout(() => {
-          setImportProgress((prev) =>
-            prev ? { ...prev, status: 'Completed', progress: 100 } : null
-          )
-          setSelectedJobId(progress.importJobId)
-          setRefreshTrigger((t) => t + 1)
-          setState('viewing')
-        }, 1500)
+      }
+      
+      setActiveImports(prev => [...prev, newImport])
+      
+      // Reset form for new import
+      setSelectedFile(null)
+      setPreview(null)
+      setState('upload')
+      setIsLoading(false)
+
+      // Poll for progress updates for this specific job
+      const pollProgress = async () => {
+        try {
+          const updatedJob = await jobsApi.get(job.id)
+          const progressPercent = updatedJob.totalRecords > 0 
+            ? Math.round((updatedJob.processedRecords / updatedJob.totalRecords) * 100) 
+            : 0
+
+          setActiveImports(prev => prev.map(imp => 
+            imp.id === job.id 
+              ? {
+                  ...imp,
+                  progress: {
+                    importJobId: updatedJob.id,
+                    totalRecords: updatedJob.totalRecords,
+                    processedRecords: updatedJob.processedRecords,
+                    progress: progressPercent,
+                    status: updatedJob.status,
+                    errorMessage: updatedJob.errorMessage,
+                    startedAt: updatedJob.startedAt,
+                    completedAt: updatedJob.completedAt,
+                    durationMs: updatedJob.durationMs
+                  }
+                }
+              : imp
+          ))
+
+          if (updatedJob.status === 'Completed' || updatedJob.status === 'CompletedWithErrors' || updatedJob.status === 'Failed') {
+            // Remove from active imports after a delay to show final state
+            setTimeout(() => {
+              setActiveImports(prev => prev.filter(imp => imp.id !== job.id))
+              pollingRefs.current.delete(job.id)
+            }, 3000)
+            setRefreshTrigger((t) => t + 1)
+            return
+          }
+
+          // Continue polling
+          const timeout = setTimeout(pollProgress, 500)
+          pollingRefs.current.set(job.id, timeout)
+        } catch (err) {
+          console.error('Error polling progress:', err)
+          const timeout = setTimeout(pollProgress, 1000)
+          pollingRefs.current.set(job.id, timeout)
+        }
       }
 
-      pollProgress()
+      // Start polling immediately for async jobs
+      const timeout = setTimeout(pollProgress, 200)
+      pollingRefs.current.set(job.id, timeout)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start import')
       setIsLoading(false)
@@ -79,12 +175,18 @@ export default function App() {
     setState('viewing')
   }, [])
 
-  const handleNewImport = useCallback(() => {
+  const handleBackToUpload = useCallback(() => {
     setState('upload')
     setSelectedFile(null)
     setPreview(null)
-    setImportProgress(null)
     setSelectedJobId(null)
+    setError(null)
+  }, [])
+
+  const handleCancelPreview = useCallback(() => {
+    setState('upload')
+    setSelectedFile(null)
+    setPreview(null)
     setError(null)
   }, [])
 
@@ -106,9 +208,9 @@ export default function App() {
               </div>
             </div>
 
-            {state !== 'upload' && (
+            {state === 'viewing' && (
               <button
-                onClick={handleNewImport}
+                onClick={handleBackToUpload}
                 className="px-4 py-2 text-sm font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors flex items-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -141,6 +243,52 @@ export default function App() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
+              </div>
+            )}
+
+            {/* Active Imports Panel */}
+            {activeImports.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-primary-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Active Imports ({activeImports.length})
+                  </h2>
+                </div>
+                <div className="space-y-4">
+                  {activeImports.map((imp) => (
+                    <div key={imp.id} className="bg-gray-50 rounded-xl border border-gray-200 p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          <span className="text-sm font-medium text-gray-700 truncate max-w-xs">{imp.fileName}</span>
+                        </div>
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          imp.progress.status === 'Completed' || imp.progress.status === 'CompletedWithErrors'
+                            ? 'bg-green-100 text-green-700'
+                            : imp.progress.status === 'Failed'
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-blue-100 text-blue-700'
+                        }`}>
+                          {imp.progress.status}
+                        </span>
+                      </div>
+                      <ImportProgressBar progress={imp.progress} />
+                      <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
+                        <span>
+                          {(imp.progress.processedRecords || 0).toLocaleString()} / {(imp.progress.totalRecords || 0).toLocaleString() || '?'} records
+                        </span>
+                        <span className="font-mono">
+                          {(imp.elapsedTime / 1000).toFixed(1)}s
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -197,7 +345,7 @@ export default function App() {
                   </div>
                   <div className="flex items-center gap-3">
                     <button
-                      onClick={handleNewImport}
+                      onClick={handleCancelPreview}
                       className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                     >
                       Cancel
@@ -213,7 +361,7 @@ export default function App() {
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                           </svg>
-                          Importing...
+                          Starting...
                         </>
                       ) : (
                         <>
@@ -228,11 +376,6 @@ export default function App() {
                 </div>
                 <PreviewTable preview={preview} />
               </div>
-            )}
-
-            {/* Importing State */}
-            {state === 'importing' && importProgress && (
-              <ImportProgressBar progress={importProgress} />
             )}
 
             {/* Viewing State */}

@@ -72,15 +72,15 @@ export function ImportProgressBar({ progress }: ImportProgressBarProps) {
             <h3 className="text-lg font-semibold text-gray-800">
               {progress.status === 'Completed' ? 'Import Complete!' : 
                progress.status === 'Failed' ? 'Import Failed' :
-               progress.status === 'Processing' ? 'Importing...' : 'Pending'}
+               progress.status === 'Processing' ? 'Importing...' : 'Processing...'}
             </h3>
             <p className="text-sm text-gray-500">
-              {progress.processedRecords.toLocaleString()} of {progress.totalRecords.toLocaleString()} records
+              {(progress.processedRecords || 0).toLocaleString()} of {(progress.totalRecords || 0).toLocaleString()} records
             </p>
           </div>
         </div>
         <div className="text-right">
-          <span className="text-2xl font-bold text-gray-800">{progress.progress}%</span>
+          <span className="text-2xl font-bold text-gray-800">{progress.progress || 0}%</span>
         </div>
       </div>
 
@@ -89,15 +89,15 @@ export function ImportProgressBar({ progress }: ImportProgressBarProps) {
         <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full transition-all duration-500 ease-out ${getStatusColor()}`}
-            style={{ width: `${progress.progress}%` }}
+            style={{ width: `${progress.progress || 0}%` }}
           />
         </div>
         
         {/* Animated shine effect for processing */}
-        {progress.status === 'Processing' && (
+        {(progress.status === 'Processing' || !progress.status || progress.status === 'Pending') && (
           <div
             className="absolute top-0 left-0 h-full w-full overflow-hidden rounded-full"
-            style={{ width: `${progress.progress}%` }}
+            style={{ width: `${progress.progress || 0}%` }}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-[shimmer_2s_infinite]" />
           </div>
