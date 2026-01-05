@@ -1,4 +1,4 @@
-﻿#  QuickIngestFile
+﻿# QuickIngestFile
 
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)](https://react.dev/)
@@ -8,85 +8,85 @@
 
 ---
 
-##  Propósito
+## Purpose
 
-O **QuickIngestFile** nasceu da necessidade de simplificar e acelerar o processo de importação de dados em massa. Em muitos cenários corporativos e de desenvolvimento, equipes gastam tempo excessivo criando soluções customizadas para importar arquivos CSV ou Excel para bancos de dados.
+**QuickIngestFile** was created to simplify and speed up the process of bulk data import. In many business and development scenarios, teams spend too much time creating custom solutions to import CSV or Excel files into databases.
 
-###  Problemas que Resolve
+### Problems It Solves
 
-| Problema | Solução QuickIngestFile |
-|----------|------------------------|
-| **Desenvolvimento repetitivo** - Criar código de importação para cada novo tipo de arquivo | Sistema genérico que aceita qualquer estrutura de dados |
-| **Performance lenta** - Imports row-by-row que demoram horas em grandes volumes | Bulk inserts com batching, processamento paralelo via Channels |
-| **Rigidez de schema** - Necessidade de criar entidades/tabelas antes de importar | Detecção automática de schema, armazenamento flexível em JSON |
-| **Múltiplos formatos** - Código diferente para CSV, Excel, etc. | Strategy Pattern permite parsers plugáveis para qualquer formato |
-| **Lock-in de banco** - Solução atrelada a um único SGBD | Arquitetura multi-database (SQL Server, MongoDB, extensível) |
-| **Falta de visibilidade** - Não saber o status/progresso da importação | UI moderna com tracking em tempo real e histórico de jobs |
-| **Ambiente de dev complexo** - Configurar banco, app, dependências | Docker Compose one-click setup |
+| Problem | QuickIngestFile Solution |
+|---------|-------------------------|
+| **Repetitive development** - Writing import code for each new file type | Generic system that accepts any data structure |
+| **Slow performance** - Row-by-row imports that take hours for large volumes | Bulk inserts with batching, parallel processing via Channels |
+| **Rigid schema** - Need to create entities/tables before importing | Automatic schema detection, flexible JSON storage |
+| **Multiple formats** - Different code for CSV, Excel, etc. | Strategy Pattern allows pluggable parsers for any format |
+| **Database lock-in** - Solution tied to a single DBMS | Multi-database architecture (SQL Server, MongoDB, extensible) |
+| **Lack of visibility** - Not knowing import status/progress | Modern UI with real-time tracking and job history |
+| **Complex dev environment** - Setting up database, app, dependencies | Docker Compose one-click setup |
 
-###  Casos de Uso
+### Use Cases
 
-- **Migração de dados**: Importar dados legados de planilhas para sistemas modernos
-- **ETL simplificado**: Ingestão rápida de dados para pipelines de análise
-- **Integração de sistemas**: Receber arquivos de parceiros/fornecedores em diversos formatos
-- **Prototipagem**: Testar rapidamente estruturas de dados sem criar schemas
-- **Data Lake/Warehouse**: Alimentar repositórios de dados com múltiplas fontes
-- **Backoffice operations**: Permitir que usuários não-técnicos importem dados via UI amigável
+- **Data migration**: Import legacy data from spreadsheets to modern systems
+- **Simple ETL**: Fast data ingestion for analysis pipelines
+- **System integration**: Receive files from partners/vendors in various formats
+- **Prototyping**: Quickly test data structures without creating schemas
+- **Data Lake/Warehouse**: Feed data repositories from multiple sources
+- **Backoffice operations**: Allow non-technical users to import data via friendly UI
 
-###  Por que usar?
+### Why Use It?
 
-1. **Zero configuração de schema** - Arraste o arquivo e importe
-2. **Velocidade extrema** - 1 milhão de registros em ~5 segundos
-3. **Extensibilidade** - Adicione novos formatos de arquivo ou bancos de dados facilmente
+1. **Zero schema configuration** - Drag the file and import
+2. **Extreme speed** - 1 million records in ~5 seconds
+3. **Extensibility** - Easily add new file formats or databases
 4. **Production-ready** - Clean Architecture, Docker, logs, error handling
-5. **Portfolio-quality** - Código moderno demonstrando boas práticas .NET 8 e C# 12
+5. **Portfolio-quality** - Modern code showing .NET 8 and C# 12 best practices
 
 ---
 
-##  Features
+## Features
 
--  **Multi-format Support**: CSV, Excel (.xlsx, .xls), e extensível para mais
--  **Auto Schema Detection**: Detecta automaticamente colunas, tipos de dados e estrutura
--  **Multi-database**: SQL Server, MongoDB (arquitetura extensível para PostgreSQL, etc.)
--  **Blazing Fast**: Sylvan CSV parser, batch bulk inserts, Channels-based streaming
--  **Clean Architecture**: Domain-driven design, princípios SOLID, Strategy Pattern
--  **Docker Ready**: Containerização completa com docker-compose
--  **Modern UI**: React 18 + Vite + Twind para estilização
--  **Dynamic Data Storage**: Armazenamento de registros baseado em JSON para qualquer estrutura
+- **Multi-format Support**: CSV, Excel (.xlsx, .xls), and extensible for more
+- **Auto Schema Detection**: Automatically detects columns, data types, and structure
+- **Multi-database**: SQL Server, MongoDB (extensible architecture for PostgreSQL, etc.)
+- **Blazing Fast**: Sylvan CSV parser, batch bulk inserts, Channels-based streaming
+- **Clean Architecture**: Domain-driven design, SOLID principles, Strategy Pattern
+- **Docker Ready**: Full containerization with docker-compose
+- **Modern UI**: React 18 + Vite + Twind for styling
+- **Dynamic Data Storage**: JSON-based record storage for any data structure
 
-##  Architecture
-
-```
-
-                      Frontend (React)                        
-              Vite + Twind + Drag & Drop Upload              
-
-                              
-
-                   API (Minimal API .NET 8)                   
-              REST Endpoints + Swagger + CORS                
-
-                              
-
-                      Application Layer                       
-    File Parsers (Strategy)  Import Service (Channels)      
-         DTOs  Factory  DataQueryService                    
-
-                              
-
-                       Domain Layer                           
-    ImportJob  ImportedRecord  FileSchema  Result<T>      
-              Repository Interfaces  Unit of Work            
-
-                              
-
-                    Infrastructure Layer                      
-    SQL Server (EF Core + BulkExtensions)  MongoDB Driver   
-         AppDbContext  Repository Implementations            
+## Architecture
 
 ```
++-------------------------------------------------------------+
+|                      Frontend (React)                        |
+|              Vite + Twind + Drag & Drop Upload              |
++-------------------------------------------------------------+
+                              |
++-------------------------------------------------------------+
+|                   API (Minimal API .NET 8)                   |
+|              REST Endpoints + Swagger + CORS                |
++-------------------------------------------------------------+
+                              |
++-------------------------------------------------------------+
+|                      Application Layer                       |
+|    File Parsers (Strategy) | Import Service (Channels)      |
+|         DTOs | Factory | DataQueryService                    |
++-------------------------------------------------------------+
+                              |
++-------------------------------------------------------------+
+|                       Domain Layer                           |
+|    ImportJob | ImportedRecord | FileSchema | Result<T>      |
+|              Repository Interfaces | Unit of Work            |
++-------------------------------------------------------------+
+                              |
++-------------------------------------------------------------+
+|                    Infrastructure Layer                      |
+|    SQL Server (EF Core + BulkExtensions) | MongoDB Driver   |
+|         AppDbContext | Repository Implementations            |
++-------------------------------------------------------------+
+```
 
-##  Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -119,7 +119,7 @@ npm install
 npm run dev
 ```
 
-##  Performance
+## Performance
 
 | Scenario | Records | Time |
 |----------|---------|------|
@@ -127,7 +127,7 @@ npm run dev
 | Excel Import | 100,000 | ~2s |
 | CSV Import | 1,000,000 | ~5s |
 
-##  Tech Stack
+## Tech Stack
 
 ### Backend
 - .NET 8 with C# 12
@@ -150,7 +150,7 @@ npm run dev
 - SQL Server 2022
 - MongoDB 7
 
-##  Project Structure
+## Project Structure
 
 ```
 QuickIngestFile/
@@ -164,7 +164,7 @@ QuickIngestFile/
  README.md
 ```
 
-##  Configuration
+## Configuration
 
 ### Database Provider
 
@@ -185,10 +185,10 @@ Configure in `appsettings.json`:
 }
 ```
 
-##  License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-**Made with  using .NET 8, React & Clean Architecture**
+**Made with .NET 8, React & Clean Architecture**
