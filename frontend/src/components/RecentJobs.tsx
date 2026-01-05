@@ -62,12 +62,12 @@ export function RecentJobs({ onSelectJob, refreshTrigger }: RecentJobsProps) {
 
   if (isLoading) {
     return (
-      <div class="p-6 bg-white rounded-xl border border-gray-200">
-        <div class="animate-pulse space-y-4">
-          <div class="h-4 bg-gray-200 rounded w-1/4" />
-          <div class="space-y-3">
+      <div className="p-6 bg-white rounded-xl border border-gray-200">
+        <div className="animate-pulse space-y-4">
+          <div className="h-4 bg-gray-200 rounded w-1/4" />
+          <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} class="h-16 bg-gray-100 rounded" />
+              <div key={i} className="h-16 bg-gray-100 rounded" />
             ))}
           </div>
         </div>
@@ -77,22 +77,22 @@ export function RecentJobs({ onSelectJob, refreshTrigger }: RecentJobsProps) {
 
   if (jobs.length === 0) {
     return (
-      <div class="p-8 bg-white rounded-xl border border-gray-200 text-center">
+      <div className="p-8 bg-white rounded-xl border border-gray-200 text-center">
         <svg
-          class="w-12 h-12 mx-auto text-gray-300"
+          className="w-12 h-12 mx-auto text-gray-300"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
         >
           <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
             d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
           />
         </svg>
-        <h3 class="mt-4 text-lg font-medium text-gray-700">No imports yet</h3>
-        <p class="mt-2 text-sm text-gray-500">
+        <h3 className="mt-4 text-lg font-medium text-gray-700">No imports yet</h3>
+        <p className="mt-2 text-sm text-gray-500">
           Upload a file to start importing data
         </p>
       </div>
@@ -100,45 +100,45 @@ export function RecentJobs({ onSelectJob, refreshTrigger }: RecentJobsProps) {
   }
 
   return (
-    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div class="px-6 py-4 border-b border-gray-200">
-        <h3 class="text-lg font-semibold text-gray-800">Recent Imports</h3>
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="px-6 py-4 border-b border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-800">Recent Imports</h3>
       </div>
-      <div class="divide-y divide-gray-100">
+      <div className="divide-y divide-gray-100">
         {jobs.map((job) => (
           <div
             key={job.id}
             onClick={() => onSelectJob(job.id)}
-            class="px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors flex items-center justify-between group"
+            className="px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors flex items-center justify-between group"
           >
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-3">
-                <h4 class="text-sm font-medium text-gray-800 truncate">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3">
+                <h4 className="text-sm font-medium text-gray-800 truncate">
                   {job.fileName}
                 </h4>
                 <span
-                  class={`px-2 py-0.5 text-xs font-medium rounded-full ${getStatusBadge(
+                  className={`px-2 py-0.5 text-xs font-medium rounded-full ${getStatusBadge(
                     job.status
                   )}`}
                 >
                   {job.status}
                 </span>
               </div>
-              <div class="mt-1 flex items-center gap-4 text-xs text-gray-500">
+              <div className="mt-1 flex items-center gap-4 text-xs text-gray-500">
                 <span>{job.totalRecords.toLocaleString()} records</span>
                 <span>{formatDate(job.createdAt)}</span>
               </div>
             </div>
             <button
               onClick={(e) => handleDelete(job.id, e)}
-              class="ml-4 p-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+              className="ml-4 p-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
               title="Delete"
             >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
                   d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                 />
               </svg>
@@ -149,3 +149,4 @@ export function RecentJobs({ onSelectJob, refreshTrigger }: RecentJobsProps) {
     </div>
   )
 }
+
