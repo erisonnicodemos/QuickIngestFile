@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  # QuickIngestFile API
+  api:
+    build:
+      context: .
+      dockerfile: src/QuickIngestFile.Api/Dockerfile
+    container_name: quickingestfile-api
+    ports:
+      - "5000:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - Database__Provider=SqlServer
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=QuickIngestFile;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;
+      - Database__MongoDB__ConnectionString=mongodb://mongodb:27017
+      - Database__MongoDB__DatabaseName=quickingestfile
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+    networks:
+      - quickingestfile-network
+    volumes:
+      - uploads-data:/app/uploads
+
+  # SQL Server
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: quickingestfile-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong@Passw0rd
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    networks:
+      - quickingestfile-network
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P YourStrong@Passw0rd -C -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+
+  # MongoDB
+  mongodb:
+    image: mongo:7.0
+    container_name: quickingestfile-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - quickingestfile-network
+
+  # Frontend (React)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: quickingestfile-frontend
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_API_URL=http://localhost:5000
+    depends_on:
+      - api
+    networks:
+      - quickingestfile-network
+
+networks:
+  quickingestfile-network:
+    driver: bridge
+
+volumes:
+  sqlserver-data:
+  mongodb-data:
+  uploads-data:
