@@ -11,15 +11,18 @@ const api = axios.create({
 
 // Types
 export interface FilePreview {
-  schema: FileSchema
+  fileName: string
+  fileSize: number
+  detectedColumns: ColumnDefinition[]
   previewRows: Record<string, unknown>[]
-  totalRows: number
-  detectedFormat: string
+  estimatedTotalRows: number
 }
 
 export interface FileSchema {
-  columns: ColumnDefinition[]
+  id: string
+  importJobId: string
   fileName: string
+  columns: ColumnDefinition[]
 }
 
 export interface ColumnDefinition {

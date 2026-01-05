@@ -6,7 +6,7 @@ interface PreviewTableProps {
 }
 
 export function PreviewTable({ preview, maxRows = 10 }: PreviewTableProps) {
-  const columns = preview.schema.columns.filter((c) => !c.isIgnored)
+  const columns = preview.detectedColumns.filter((c) => !c.isIgnored)
   const rows = preview.previewRows.slice(0, maxRows)
 
   const getTypeColor = (type: string) => {
@@ -25,43 +25,49 @@ export function PreviewTable({ preview, maxRows = 10 }: PreviewTableProps) {
     }
   }
 
+  // Extrair formato do arquivo pelo nome
+  const getFileFormat = (fileName: string): string => {
+    const ext = fileName.split('.').pop()?.toLowerCase() || 'unknown'
+    return ext
+  }
+
   return (
-    <div class="w-full">
+    <div className="w-full">
       {/* Header Info */}
-      <div class="flex items-center justify-between mb-4">
-        <div class="flex items-center gap-4">
-          <span class="text-sm text-gray-500">
-            <span class="font-medium text-gray-700">{preview.totalRows}</span> rows detected
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-gray-500">
+            <span className="font-medium text-gray-700">{preview.estimatedTotalRows}</span> rows detected
           </span>
-          <span class="text-sm text-gray-500">
-            <span class="font-medium text-gray-700">{columns.length}</span> columns
+          <span className="text-sm text-gray-500">
+            <span className="font-medium text-gray-700">{columns.length}</span> columns
           </span>
-          <span class="px-2 py-1 text-xs font-medium bg-primary-100 text-primary-700 rounded-full">
-            {preview.detectedFormat.toUpperCase()}
+          <span className="px-2 py-1 text-xs font-medium bg-primary-100 text-primary-700 rounded-full">
+            {getFileFormat(preview.fileName).toUpperCase()}
           </span>
         </div>
       </div>
 
       {/* Table */}
-      <div class="border border-gray-200 rounded-xl overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-gray-50">
+      <div className="border border-gray-200 rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50">
               <tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 w-12">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 w-12">
                   #
                 </th>
                 {columns.map((column) => (
                   <th
                     key={column.index}
-                    class="px-4 py-3 text-left border-b border-gray-200"
+                    className="px-4 py-3 text-left border-b border-gray-200"
                   >
-                    <div class="flex flex-col gap-1">
-                      <span class="text-sm font-medium text-gray-700 truncate max-w-[200px]">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm font-medium text-gray-700 truncate max-w-[200px]">
                         {column.displayName || column.name}
                       </span>
                       <span
-                        class={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full w-fit ${getTypeColor(
+                        className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full w-fit ${getTypeColor(
                           column.detectedType
                         )}`}
                       >
@@ -72,16 +78,16 @@ export function PreviewTable({ preview, maxRows = 10 }: PreviewTableProps) {
                 ))}
               </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-100">
+            <tbody className="bg-white divide-y divide-gray-100">
               {rows.map((row, rowIndex) => (
-                <tr key={rowIndex} class="hover:bg-gray-50 transition-colors">
-                  <td class="px-4 py-3 text-sm text-gray-400 font-mono">
+                <tr key={rowIndex} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 text-sm text-gray-400 font-mono">
                     {rowIndex + 1}
                   </td>
                   {columns.map((column) => (
                     <td
                       key={column.index}
-                      class="px-4 py-3 text-sm text-gray-600 truncate max-w-[300px]"
+                      className="px-4 py-3 text-sm text-gray-600 truncate max-w-[300px]"
                       title={String(row[column.name] ?? '')}
                     >
                       {formatValue(row[column.name])}
@@ -95,8 +101,8 @@ export function PreviewTable({ preview, maxRows = 10 }: PreviewTableProps) {
 
         {/* Show more indicator */}
         {preview.totalRows > maxRows && (
-          <div class="px-4 py-3 bg-gray-50 border-t border-gray-200 text-center">
-            <span class="text-sm text-gray-500">
+          <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-center">
+            <span className="text-sm text-gray-500">
               Showing {maxRows} of {preview.totalRows} rows
             </span>
           </div>
@@ -112,3 +118,4 @@ function formatValue(value: unknown): string {
   if (typeof value === 'number') return value.toLocaleString()
   return String(value)
 }
+
